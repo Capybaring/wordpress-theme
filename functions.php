@@ -1,4 +1,6 @@
+
 <?php
+
 // 主题基础设置
 add_action('after_setup_theme', function () {
     // 告诉 WooCommerce：这个主题是兼容的
@@ -160,4 +162,15 @@ add_filter('woocommerce_account_menu_items', function ($items) {
 //         exit;
 //     }
 // });
+
+/**
+ * 强行修改下单后的跳转地址
+ * 不管它想去哪个 order-received 页面，一律抓回个人中心
+ */
+add_filter('woocommerce_get_checkout_order_received_url', 'custom_redirect_to_my_account', 10, 2);
+function custom_redirect_to_my_account($return_url, $order)
+{
+    // 强行指定跳转到“我的账户”页面（即显示你那4个按钮的页面）
+    return wc_get_page_permalink('myaccount');
+}
 
