@@ -1,7 +1,17 @@
-<?php get_header(); ?>
+<?php
+get_header();
+?>
 
-<main>
-  <h1>Hello WF Store</h1>
+<main class="site-main">
+  <?php
+  if ( have_posts() ) {
+    while ( have_posts() ) {
+      the_post();
+      the_content();
+    }
+  }
+  ?>
 </main>
 
-<?php get_footer(); ?>
+<?php
+get_footer();

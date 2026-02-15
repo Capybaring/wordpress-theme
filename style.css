@@ -1,7 +1,214 @@
 /*
 Theme Name: My Shop Theme
-Theme URI: https://example.com
-Author: Qiao Hao
-Description: Custom WooCommerce theme for foreign trade
-Version: 1.0
+Version: 1.1
 */
+
+/* 1. 全局基础样式 */
+.page-container {
+    background: #f2f5f8;
+    min-height: 100vh;
+    padding-bottom: 80px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #333;
+}
+
+/* 顶部通用 Header */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #fff;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.header-title {
+    flex: 1;
+    text-align: center;
+    font-weight: 800;
+}
+
+/* 2. 我的账户：主界面 (4个大方块模式) */
+.account-main-menu {
+    padding: 20px;
+}
+
+.user-info-card {
+    background: #007aff;
+    /* 统一使用你的品牌蓝 */
+    color: #fff;
+    padding: 30px 20px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+}
+
+/* 列表组容器 */
+.menu-list-group {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    /* 确保子项目不会超出圆角 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 列表单项 */
+.menu-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px;
+    background: #fff;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    font-size: 16px;
+    border-bottom: 1px solid #f5f5f5;
+    /* 细分割线 */
+    transition: background 0.2s;
+}
+
+.menu-list-item:last-child {
+    border-bottom: none;
+    /* 最后一项不要分割线 */
+}
+
+.menu-list-item:active {
+    background: #f9f9f9;
+    /* 点击时的反馈效果 */
+}
+
+/* 左侧图标与文字 */
+.item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.menu-list-item .icon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+}
+
+/* 右侧箭头 */
+.item-arrow {
+    color: #ccc;
+    font-size: 20px;
+    font-family: serif;
+}
+
+/* 退出登录的特殊颜色 */
+.menu-list-item.logout {
+    color: #ff4d4f;
+}
+
+/* 之前四个方块的冗余代码可以删掉了 */
+.menu-grid,
+.menu-box {
+    display: none;
+}
+
+/* 3. 我的账户：子页面结构 (点击详情后) */
+.sub-header {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.back-link {
+    font-size: 24px;
+    text-decoration: none;
+    color: #007aff;
+    width: 40px;
+}
+
+.sub-header .header-title {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    font-size: 18px;
+    margin-right: 40px;
+    /* 抵消左侧返回键宽度，实现视觉居中 */
+}
+
+.sub-content-body {
+    padding: 15px;
+    background: #fff;
+    padding-bottom: 100px;
+    /* 避免被底部导航遮挡 */
+}
+
+/* 4. WooCommerce 核心样式重写 (防止乱序) */
+.woocommerce-account .woocommerce-MyAccount-navigation {
+    display: none !important;
+    /* 彻底隐藏原生左侧菜单 */
+}
+
+.woocommerce .woocommerce-account .woocommerce-MyAccount-content,
+.woocommerce-account .woocommerce-MyAccount-content {
+    width: 100% !important;
+    /* 强制满宽 */
+    max-width: 100% !important;
+    float: none !important;
+    /* 彻底清除浮动 */
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+}
+
+/* 订单表格适配 */
+.woocommerce-MyAccount-content .woocommerce-orders-table {
+    width: 100% !important;
+    display: table !important;
+    /* 在大屏保持表格特性 */
+    margin: 0;
+}
+
+/* 移动端表格滑动容器 */
+@media (max-width: 768px) {
+    .woocommerce-MyAccount-content .woocommerce-orders-table {
+        display: block !important;
+        /* 手机端允许滚动 */
+        overflow-x: auto;
+    }
+}
+
+
+.woocommerce-orders-table th {
+    background-color: #f7f7f7;
+    padding: 12px;
+    text-align: left;
+}
+
+.woocommerce-orders-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+/* 统一按钮样式 */
+.woocommerce-MyAccount-content .button {
+    background-color: #007aff !important;
+    color: #fff !important;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* 5. 底部导航容器 */
+.my-account-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
