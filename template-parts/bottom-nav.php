@@ -27,19 +27,19 @@ elseif (is_account_page())
     <!-- 菜单层 -->
     <div class="menu-layer">
         <a class="menu-item <?php echo $current === 'home' ? 'active' : ''; ?>" href="/">
-            <span class="menu-icon">🏠</span><span>首页</span>
+            </span><span>首页</span>
         </a>
 
         <a class="menu-item <?php echo $current === 'shop' ? 'active' : ''; ?>" href="/shop">
-            <span class="menu-icon">📦</span><span>商品</span>
+            </span><span>商品</span>
         </a>
 
         <a class="menu-item <?php echo $current === 'cart' ? 'active' : ''; ?>" href="/cart">
-            <span class="menu-icon">📋</span><span>订单</span>
+            </span><span>订单</span>
         </a>
 
         <a class="menu-item <?php echo $current === 'account' ? 'active' : ''; ?>" href="/my-account">
-            <span class="menu-icon">👤</span><span>我的</span>
+            </span><span>我的</span>
         </a>
     </div>
 

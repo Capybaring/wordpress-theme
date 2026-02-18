@@ -4,25 +4,21 @@ $endpoint = WC()->query->get_current_endpoint();
 
 if (empty($endpoint)): ?>
 	<div class="account-main-menu">
-		<div class="user-info-card">
-			<h2><?php echo wp_get_current_user()->display_name; ?></h2>
-		</div>
-
 		<div class="menu-list-group">
 			<a href="<?php echo wc_get_endpoint_url('edit-account'); ?>" class="menu-list-item">
-				<span class="item-left"><span class="icon">👤</span> 账户详情</span>
+				</span> 账户详情</span>
 				<span class="item-arrow">›</span>
 			</a>
 			<a href="<?php echo wc_get_endpoint_url('orders'); ?>" class="menu-list-item">
-				<span class="item-left"><span class="icon">📦</span> 我的订单</span>
+				</span> 我的订单</span>
 				<span class="item-arrow">›</span>
 			</a>
 			<a href="<?php echo wc_get_endpoint_url('edit-address'); ?>" class="menu-list-item">
-				<span class="item-left"><span class="icon">📍</span> 个人地址</span>
+				<span class="item-left"> 个人地址</span>
 				<span class="item-arrow">›</span>
 			</a>
 			<a href="<?php echo wc_logout_url(); ?>" class="menu-list-item logout">
-				<span class="item-left"><span class="icon">🚪</span> 退出登录</span>
+				<span class="item-left">退出登录</span>
 				<span class="item-arrow">›</span>
 			</a>
 		</div>

@@ -1,4 +1,3 @@
-
 <?php
 
 // 主题基础设置
@@ -173,4 +172,57 @@ function custom_redirect_to_my_account($return_url, $order)
     // 强行指定跳转到“我的账户”页面（即显示你那4个按钮的页面）
     return wc_get_page_permalink('myaccount');
 }
+// 1. 降低密码强度要求（0=最简单，1=弱，2=中等）
+add_filter('woocommerce_min_password_strength', function () {
+    return 0;
+});
 
+// 2. 修改提示文字，告诉用户 6 位就行
+add_filter('password_hint', function () {
+    return '提示：建议密码长度至少为 6 位。';
+});
+
+/**
+ * 对应 JS 中的 update_cart_quantity
+ */
+add_action('wp_ajax_update_cart_quantity', 'ajax_update_cart_quantity');
+add_action('wp_ajax_nopriv_update_cart_quantity', 'ajax_update_cart_quantity');
+
+/**
+ * 对应 JS 中的 remove_cart_item
+ */
+add_action('wp_ajax_remove_cart_item', 'ajax_remove_cart_item');
+add_action('wp_ajax_nopriv_remove_cart_item', 'ajax_remove_cart_item');
+function ajax_update_cart_quantity()
+{
+    $cart_item_key = $_POST['cart_item_key'];
+    $new_qty = intval($_POST['new_qty']);
+
+    if (WC()->cart->set_quantity($cart_item_key, $new_qty)) {
+        // 获取更新后的总价和小计
+        $cart_item = WC()->cart->get_cart_item($cart_item_key);
+        $subtotal = $cart_item['line_total'];
+
+        wp_send_json_success(array(
+            'total' => WC()->cart->get_cart_total(),
+            'subtotal' => number_format($subtotal, 2)
+        ));
+    } else {
+        wp_send_json_error();
+    }
+    wp_die();
+}
+
+function ajax_remove_cart_item()
+{
+    $cart_item_key = $_POST['cart_item_key'];
+    if (WC()->cart->remove_cart_item($cart_item_key)) {
+        wp_send_json_success(array(
+            'total' => WC()->cart->get_cart_total(),
+            'cart_empty' => WC()->cart->is_empty()
+        ));
+    } else {
+        wp_send_json_error();
+    }
+    wp_die();
+}

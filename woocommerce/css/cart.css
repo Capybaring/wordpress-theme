@@ -96,3 +96,10 @@
     font-weight: bold;
     text-decoration: none;
 }
+
+.back-btn {
+    font-size: 24px;
+    text-decoration: none;
+    color: #007aff;
+    width: 40px;
+}
