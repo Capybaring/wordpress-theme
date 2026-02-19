@@ -1,125 +1,215 @@
 <?php
 /**
- * Orders
- *
- * Shows orders on the account page.
- *
- * This template can be overridden by copying it to yourtheme/woocommerce/myaccount/orders.php.
- *
- * HOWEVER, on occasion WooCommerce will need to update template files and you
- * (the theme developer) will need to copy the new files to your theme to
- * maintain compatibility. We try to do this as little as possible, but it does
- * happen. When this occurs the version of the template file will be bumped and
- * the readme will list any important changes.
- *
- * @see https://woocommerce.com/document/template-structure/
- * @package WooCommerce\Templates
- * @version 9.5.0
+ * Orders - Minimalist Card Layout
  */
 
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
-do_action( 'woocommerce_before_account_orders', $has_orders ); ?>
+do_action('woocommerce_before_account_orders', $has_orders); ?>
 
-<?php if ( $has_orders ) : ?>
+<?php if ($has_orders): ?>
 
-	<table class="woocommerce-orders-table woocommerce-MyAccount-orders shop_table shop_table_responsive my_account_orders account-orders-table">
-		<thead>
-			<tr>
-				<?php foreach ( wc_get_account_orders_columns() as $column_id => $column_name ) : ?>
-					<th scope="col" class="woocommerce-orders-table__header woocommerce-orders-table__header-<?php echo esc_attr( $column_id ); ?>"><span class="nobr"><?php echo esc_html( $column_name ); ?></span></th>
-				<?php endforeach; ?>
-			</tr>
-		</thead>
-
-		<tbody>
-			<?php
-			foreach ( $customer_orders->orders as $customer_order ) {
-				$order      = wc_get_order( $customer_order ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-				$item_count = $order->get_item_count() - $order->get_item_count_refunded();
-				?>
-				<tr class="woocommerce-orders-table__row woocommerce-orders-table__row--status-<?php echo esc_attr( $order->get_status() ); ?> order">
-					<?php foreach ( wc_get_account_orders_columns() as $column_id => $column_name ) :
-						$is_order_number = 'order-number' === $column_id;
-					?>
-						<?php if ( $is_order_number ) : ?>
-							<th class="woocommerce-orders-table__cell woocommerce-orders-table__cell-<?php echo esc_attr( $column_id ); ?>" data-title="<?php echo esc_attr( $column_name ); ?>" scope="row">
-						<?php else : ?>
-							<td class="woocommerce-orders-table__cell woocommerce-orders-table__cell-<?php echo esc_attr( $column_id ); ?>" data-title="<?php echo esc_attr( $column_name ); ?>">
-						<?php endif; ?>
-
-							<?php if ( has_action( 'woocommerce_my_account_my_orders_column_' . $column_id ) ) : ?>
-								<?php do_action( 'woocommerce_my_account_my_orders_column_' . $column_id, $order ); ?>
-
-							<?php elseif ( $is_order_number ) : ?>
-								<?php /* translators: %s: the order number, usually accompanied by a leading # */ ?>
-								<a href="<?php echo esc_url( $order->get_view_order_url() ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'View order number %s', 'woocommerce' ), $order->get_order_number() ) ); ?>">
-									<?php echo esc_html( _x( '#', 'hash before order number', 'woocommerce' ) . $order->get_order_number() ); ?>
-								</a>
-
-							<?php elseif ( 'order-date' === $column_id ) : ?>
-								<time datetime="<?php echo esc_attr( $order->get_date_created()->date( 'c' ) ); ?>"><?php echo esc_html( wc_format_datetime( $order->get_date_created() ) ); ?></time>
-
-							<?php elseif ( 'order-status' === $column_id ) : ?>
-								<?php echo esc_html( wc_get_order_status_name( $order->get_status() ) ); ?>
-
-							<?php elseif ( 'order-total' === $column_id ) : ?>
-								<?php
-								/* translators: 1: formatted order total 2: total order items */
-								echo wp_kses_post( sprintf( _n( '%1$s for %2$s item', '%1$s for %2$s items', $item_count, 'woocommerce' ), $order->get_formatted_order_total(), $item_count ) );
-								?>
-
-							<?php elseif ( 'order-actions' === $column_id ) : ?>
-								<?php
-								$actions = wc_get_account_orders_actions( $order );
-
-								if ( ! empty( $actions ) ) {
-									foreach ( $actions as $key => $action ) { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-										if ( empty( $action['aria-label'] ) ) {
-											// Generate the aria-label based on the action name.
-											/* translators: %1$s Action name, %2$s Order number. */
-											$action_aria_label = sprintf( __( '%1$s order number %2$s', 'woocommerce' ), $action['name'], $order->get_order_number() );
-										} else {
-											$action_aria_label = $action['aria-label'];
-										}
-										echo '<a href="' . esc_url( $action['url'] ) . '" class="woocommerce-button' . esc_attr( $wp_button_class ) . ' button ' . sanitize_html_class( $key ) . '" aria-label="' . esc_attr( $action_aria_label ) . '">' . esc_html( $action['name'] ) . '</a>';
-										unset( $action_aria_label );
-									}
-								}
-								?>
-							<?php endif; ?>
-
-						<?php if ( $is_order_number ) : ?>
-							</th>
-						<?php else : ?>
-							</td>
-						<?php endif; ?>
-					<?php endforeach; ?>
-				</tr>
-				<?php
-			}
+	<div class="minimal-orders-container">
+		<?php
+		foreach ($customer_orders->orders as $customer_order) {
+			$order = wc_get_order($customer_order);
+			$item_count = $order->get_item_count() - $order->get_item_count_refunded();
+			$status_slug = $order->get_status();
+			$status_name = wc_get_order_status_name($status_slug);
 			?>
-		</tbody>
-	</table>
 
-	<?php do_action( 'woocommerce_before_account_orders_pagination' ); ?>
+			<div class="order-card status-<?php echo esc_attr($status_slug); ?>">
+				<div class="card-header">
+					<span class="order-id">#<?php echo $order->get_order_number(); ?></span>
+					<span class="order-status-badge"><?php echo esc_html($status_name); ?></span>
+				</div>
 
-	<?php if ( 1 < $customer_orders->max_num_pages ) : ?>
-		<div class="woocommerce-pagination woocommerce-pagination--without-numbers woocommerce-Pagination">
-			<?php if ( 1 !== $current_page ) : ?>
-				<a class="woocommerce-button woocommerce-button--previous woocommerce-Button woocommerce-Button--previous button<?php echo esc_attr( $wp_button_class ); ?>" href="<?php echo esc_url( wc_get_endpoint_url( 'orders', $current_page - 1 ) ); ?>"><?php esc_html_e( 'Previous', 'woocommerce' ); ?></a>
+				<a href="<?php echo esc_url($order->get_view_order_url()); ?>" class="card-body">
+					<div class="info-group">
+						<time
+							class="order-time"><?php echo esc_html(wc_format_datetime($order->get_date_created())); ?></time>
+						<div class="order-meta">
+							<?php echo wp_kses_post(sprintf(_n('%2$s 个商品', '%2$s 个商品', $item_count, 'woocommerce'), '', $item_count)); ?>
+						</div>
+					</div>
+					<div class="order-total-price">
+						<?php echo $order->get_formatted_order_total(); ?>
+					</div>
+				</a>
+
+				<?php
+				$actions = wc_get_account_orders_actions($order);
+				if (!empty($actions)): ?>
+					<div class="card-footer">
+						<?php foreach ($actions as $key => $action): ?>
+							<a href="<?php echo esc_url($action['url']); ?>"
+								class="action-btn <?php echo sanitize_html_class($key); ?>">
+								<?php echo esc_html($action['name']); ?>
+							</a>
+						<?php endforeach; ?>
+					</div>
+				<?php endif; ?>
+			</div>
+
+		<?php } ?>
+	</div>
+
+	<?php if (1 < $customer_orders->max_num_pages): ?>
+		<div class="custom-pagination">
+			<?php if (1 !== $current_page): ?>
+				<a class="prev" href="<?php echo esc_url(wc_get_endpoint_url('orders', $current_page - 1)); ?>">上一页</a>
 			<?php endif; ?>
-
-			<?php if ( intval( $customer_orders->max_num_pages ) !== $current_page ) : ?>
-				<a class="woocommerce-button woocommerce-button--next woocommerce-Button woocommerce-Button--next button<?php echo esc_attr( $wp_button_class ); ?>" href="<?php echo esc_url( wc_get_endpoint_url( 'orders', $current_page + 1 ) ); ?>"><?php esc_html_e( 'Next', 'woocommerce' ); ?></a>
+			<?php if (intval($customer_orders->max_num_pages) !== $current_page): ?>
+				<a class="next" href="<?php echo esc_url(wc_get_endpoint_url('orders', $current_page + 1)); ?>">下一页</a>
 			<?php endif; ?>
 		</div>
 	<?php endif; ?>
 
-<?php else : ?>
-
-	<?php wc_print_notice( esc_html__( 'No order has been made yet.', 'woocommerce' ) . ' <a class="woocommerce-Button wc-forward button' . esc_attr( $wp_button_class ) . '" href="' . esc_url( apply_filters( 'woocommerce_return_to_shop_redirect', wc_get_page_permalink( 'shop' ) ) ) . '">' . esc_html__( 'Browse products', 'woocommerce' ) . '</a>', 'notice' ); // phpcs:ignore WooCommerce.Commenting.CommentHooks.MissingHookComment ?>
-
+<?php else: ?>
+	<div class="empty-orders">
+		<p>暂无订单记录</p>
+		<a class="button"
+			href="<?php echo esc_url(apply_filters('woocommerce_return_to_shop_redirect', wc_get_page_permalink('shop'))); ?>">去逛逛</a>
+	</div>
 <?php endif; ?>
 
-<?php do_action( 'woocommerce_after_account_orders', $has_orders ); ?>
+<style>
+	/* 容器设置 */
+	.minimal-orders-container {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		background: transparent;
+	}
+
+	/* 卡片基础样式 */
+	.order-card {
+		background: #fff;
+		border-radius: 16px;
+		padding: 20px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+		border: 1px solid #f1f1f1;
+		transition: transform 0.2s ease;
+	}
+
+	.order-card:active {
+		transform: scale(0.98);
+	}
+
+	/* 头部：订单号与徽章 */
+	.card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 12px;
+	}
+
+	.order-id {
+		font-weight: 700;
+		color: #1d1d1f;
+		font-size: 15px;
+	}
+
+	.order-status-badge {
+		font-size: 12px;
+		padding: 4px 10px;
+		border-radius: 6px;
+		font-weight: 600;
+		background: #f5f5f7;
+		color: #86868b;
+	}
+
+	/* 不同状态的颜色区分 */
+	.status-processing .order-status-badge {
+		background: #eef6ff;
+		color: #007aff;
+	}
+
+	.status-completed .order-status-badge {
+		background: #eafff5;
+		color: #24b47e;
+	}
+
+	.status-cancelled .order-status-badge {
+		background: #fff1f0;
+		color: #ff4d4f;
+	}
+
+	/* 主体：跳转详情区域 */
+	.card-body {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		text-decoration: none !important;
+		padding: 10px 0;
+	}
+
+	.order-time {
+		display: block;
+		font-size: 13px;
+		color: #86868b;
+		margin-bottom: 4px;
+	}
+
+	.order-meta {
+		font-size: 13px;
+		color: #1d1d1f;
+	}
+
+	.order-total-price {
+		font-size: 18px;
+		font-weight: 700;
+		color: #000;
+	}
+
+	/* 底部按钮 */
+	.card-footer {
+		margin-top: 15px;
+		padding-top: 15px;
+		border-top: 1px solid #f5f5f7;
+		display: flex;
+		gap: 10px;
+		justify-content: flex-end;
+	}
+
+	.action-btn {
+		text-decoration: none !important;
+		font-size: 13px;
+		padding: 8px 16px;
+		border-radius: 8px;
+		font-weight: 600;
+		transition: all 0.2s;
+	}
+
+	/* “查看”按钮样式 */
+	.action-btn.view {
+		background: #007aff;
+		color: #fff !important;
+	}
+
+	/* 其他按钮（如取消、付款）样式 */
+	.action-btn:not(.view) {
+		background: #f5f5f7;
+		color: #1d1d1f !important;
+	}
+
+	/* 分页样式 */
+	.custom-pagination {
+		margin-top: 30px;
+		display: flex;
+		justify-content: center;
+		gap: 20px;
+	}
+
+	.custom-pagination a {
+		text-decoration: none;
+		color: #007aff;
+		font-weight: 600;
+		font-size: 14px;
+	}
+
+	/* 隐藏原生表格头 */
+	.woocommerce-orders-table thead {
+		display: none;
+	}
+</style>

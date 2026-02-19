@@ -18,15 +18,36 @@ get_header();
                 <?php foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item):
                     $product = $cart_item['data'];
                     $quantity = $cart_item['quantity'];
+                    // 获取商品链接
+                    $product_permalink = apply_filters('woocommerce_cart_item_permalink', $product->is_visible() ? $product->get_permalink($cart_item) : '', $cart_item, $cart_item_key);
                     ?>
                     <div class="cart-item">
                         <div class="item-img">
-                            <?php echo $product->get_image('thumbnail'); ?>
+                            <?php if ($product_permalink): ?>
+                                <a href="<?php echo esc_url($product_permalink); ?>">
+                                    <?php echo $product->get_image('thumbnail'); ?>
+                                </a>
+                            <?php else: ?>
+                                <?php echo $product->get_image('thumbnail'); ?>
+                            <?php endif; ?>
                         </div>
+
                         <div class="item-info">
-                            <div class="item-name"><?php echo esc_html($product->get_name()); ?></div>
+                            <div class="item-name">
+                                <?php if ($product_permalink): ?>
+                                    <a href="<?php echo esc_url($product_permalink); ?>"
+                                        style="text-decoration: none; color: inherit;">
+                                        <?php echo esc_html($product->get_name()); ?>
+                                    </a>
+                                <?php else: ?>
+                                    <?php echo esc_html($product->get_name()); ?>
+                                <?php endif; ?>
+                            </div>
+
                             <?php if ($product->get_sku()): ?>
-                                <div class="item-sku">型号: <?php echo esc_html($product->get_sku()); ?></div>
+                                <div class="item-sku">型号:
+                                    <?php echo esc_html($product->get_sku()); ?>
+                                </div>
                             <?php endif; ?>
 
                             <div class="item-qty">
@@ -35,11 +56,12 @@ get_header();
                                 <button class="qty-btn" onclick="updateQty('<?php echo $cart_item_key; ?>', 1)">+</button>
                             </div>
                         </div>
+
                         <div class="item-subtotal">
                             <div class="item-subtotal-price">
-                                ¥ <?php echo number_format($product->get_price() * $quantity, 2); ?>
+                                ¥
+                                <?php echo number_format($product->get_price() * $quantity, 2); ?>
                             </div>
-
                             <button class="remove-btn" onclick="removeItem('<?php echo $cart_item_key; ?>')">删除</button>
                         </div>
                     </div>

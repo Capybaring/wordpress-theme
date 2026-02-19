@@ -13,10 +13,10 @@ if (empty($endpoint)): ?>
 				</span> 我的订单</span>
 				<span class="item-arrow">›</span>
 			</a>
-			<a href="<?php echo wc_get_endpoint_url('edit-address'); ?>" class="menu-list-item">
+			<!-- <a href="<?php echo wc_get_endpoint_url('edit-address'); ?>" class="menu-list-item">
 				<span class="item-left"> 个人地址</span>
 				<span class="item-arrow">›</span>
-			</a>
+			</a> -->
 			<a href="<?php echo wc_logout_url(); ?>" class="menu-list-item logout">
 				<span class="item-left">退出登录</span>
 				<span class="item-arrow">›</span>

@@ -22,6 +22,12 @@ add_filter('template_include', function ($template) {
         if (file_exists($custom))
             return $custom;
     }
+    if (is_checkout() && !is_order_received_page()) {
+        // 注意这里：如果你把文件放在 woocommerce/checkout/form-checkout.php
+        $custom_checkout = get_template_directory() . '/woocommerce/checkout/form-checkout.php';
+        if (file_exists($custom_checkout))
+            return $custom_checkout;
+    }
     return $template;
 });
 
@@ -325,4 +331,237 @@ function hlt_live_search_callback()
         wp_send_json_error('No products');
     }
     wp_die();
+}
+
+/**
+ * 保存账户详情表单中的额外字段（电话和地址）
+ */
+add_action('woocommerce_save_account_details', 'hlt_save_extra_account_details', 12, 1);
+function hlt_save_extra_account_details($user_id)
+{
+    // 保存电话
+    if (isset($_POST['billing_phone'])) {
+        update_user_meta($user_id, 'billing_phone', sanitize_text_field($_POST['billing_phone']));
+    }
+
+    // 保存地址
+    if (isset($_POST['billing_address_1'])) {
+        update_user_meta($user_id, 'billing_address_1', sanitize_textarea_field($_POST['billing_address_1']));
+    }
+}
+
+/**
+ * 如果需要，可以移除姓名的必填限制（可选）
+ */
+add_filter('woocommerce_save_account_details_required_fields', 'hlt_remove_required_fields');
+function hlt_remove_required_fields($fields)
+{
+    unset($fields['account_first_name']);
+    unset($fields['account_last_name']);
+    return $fields;
+}
+
+/**
+ * 极简结算页：移除所有不必要的字段
+ */
+add_filter('woocommerce_checkout_fields', 'hlt_simplify_checkout_fields');
+function hlt_simplify_checkout_fields($fields)
+{
+    // 我们只保留 billing_address_1 (地址) 和 billing_first_name (联系人)
+    // 隐藏以下字段
+    unset($fields['billing']['billing_last_name']);
+    unset($fields['billing']['billing_company']);
+    unset($fields['billing']['billing_country']);
+    unset($fields['billing']['billing_city']);
+    unset($fields['billing']['billing_state']);
+    unset($fields['billing']['billing_postcode']);
+    unset($fields['billing']['billing_email']);
+    unset($fields['billing']['billing_phone']); // 如果你希望用户在这里再次确认电话，可以不删这一行
+
+    // 隐藏订单备注
+    unset($fields['order']['order_comments']);
+
+    // 调整剩余字段的宽度为 100%
+    if (isset($fields['billing']['billing_first_name']))
+        $fields['billing']['billing_first_name']['class'] = array('form-row-wide');
+    if (isset($fields['billing']['billing_address_1']))
+        $fields['billing']['billing_address_1']['class'] = array('form-row-wide');
+
+    return $fields;
+}
+
+/**
+ * 结算页自动从用户 Meta 中读取并填充地址
+ */
+add_filter('woocommerce_checkout_get_value', function ($value, $input) {
+    $user_id = get_current_user_id();
+    if (!$user_id)
+        return $value;
+
+    switch ($input) {
+        case 'billing_first_name':
+            return $value ?: get_user_meta($user_id, 'first_name', true) ?: wp_get_current_user()->display_name;
+        case 'billing_address_1':
+            return $value ?: get_user_meta($user_id, 'billing_address_1', true);
+        case 'billing_phone':
+            return $value ?: get_user_meta($user_id, 'billing_phone', true);
+    }
+    return $value;
+}, 10, 2);
+
+/**
+ * 移除结算页面的隐私政策文字
+ */
+add_action('wp_get_current_user', function () {
+    remove_action('woocommerce_checkout_terms_and_conditions', 'wc_checkout_privacy_policy_text', 20);
+});
+
+// 或者尝试这个更直接的过滤
+add_filter('woocommerce_get_privacy_policy_text', '__return_empty_string');
+
+/**
+ * 1. 彻底移除结算页底部的支付区域（紫框）、隐私提示和默认按钮
+ */
+// 尝试用更高的优先级执行移除
+add_action('init', function () {
+    remove_action('woocommerce_checkout_payment', 'woocommerce_checkout_payment', 20);
+    remove_action('woocommerce_checkout_terms_and_conditions', 'wc_checkout_privacy_policy_text', 20);
+});
+
+// 强行把支付区域的 HTML 渲染结果变为空白
+add_filter('woocommerce_cart_needs_payment', '__return_false');
+
+/**
+ * 2. 移除包裹/小计行（针对 Ajax 刷新后的残留）
+ */
+add_filter('woocommerce_get_order_item_totals', 'hlt_remove_checkout_totals_rows', 99, 3);
+function hlt_remove_checkout_totals_rows($total_rows, $order, $tax_display)
+{
+    unset($total_rows['cart_subtotal']); // 移除小计
+    unset($total_rows['shipping']);      // 移除运费/包裹
+    return $total_rows;
+}
+
+/**
+ * 3. 终极补丁：如果 Hook 没拦住，直接用 CSS 强行抹除（在后端注入）
+ */
+add_action('wp_head', function () {
+    if (is_checkout()) {
+        echo '<style>
+            /* 抹除紫色支付框及其内部所有内容 */
+            #payment, .woocommerce-checkout-payment, .woocommerce-privacy-policy-text { 
+                display: none !important; 
+            }
+            /* 抹除包裹信息行和小计行 */
+            tr.cart-subtotal, tr.shipping, .woocommerce-shipping-totals, .shipping-calculator-button-wrapper { 
+                display: none !important; 
+            }
+        </style>';
+    }
+}, 999);
+
+/**
+ * 结算页逻辑优化：除了详细地址外，其他字段即便没传也不报错
+ */
+add_filter('woocommerce_checkout_fields', 'hlt_relax_checkout_requirements', 999);
+function hlt_relax_checkout_requirements($fields)
+{
+    // 列表中的字段不再强制必填
+    $to_relax = array('billing_city', 'billing_state', 'billing_postcode', 'billing_company', 'billing_phone', 'billing_email');
+
+    foreach ($to_relax as $key) {
+        if (isset($fields['billing'][$key])) {
+            $fields['billing'][$key]['required'] = false;
+        }
+    }
+
+    // 移除邮编必填（针对底层逻辑）
+    add_filter('woocommerce_default_address_fields', function ($address_fields) {
+        $address_fields['postcode']['required'] = false;
+        return $address_fields;
+    });
+
+    return $fields;
+}
+
+/**
+ * 终极大招：在验证前，强行给缺失的地址字段“补课”
+ */
+add_action('woocommerce_after_checkout_validation', 'hlt_force_pass_address_validation', 10, 2);
+function hlt_force_pass_address_validation($data, $errors)
+{
+    // 如果发现了关于“地址”、“国家”或“省份”的报错，直接把报错删掉
+    // 因为我们已经在前端展示并提交了这些数据
+    $errors->remove('billing_address_1_required');
+    $errors->remove('billing_city_required');
+    $errors->remove('billing_state_required');
+    $errors->remove('billing_country_required');
+    $errors->remove('billing_phone_required');
+}
+
+/**
+ * 强行跳过地址校验：只要前端传了详细地址，就允许下单
+ */
+add_action('woocommerce_after_checkout_validation', 'hlt_skip_address_validation_errors', 999, 2);
+function hlt_skip_address_validation_errors($data, $errors)
+{
+    // 检查是否有关于地址的错误
+    if ($errors->get_error_codes()) {
+        // 彻底移除以下这些顽固的报错代码
+        $errors->remove('billing_address_1_required');
+        $errors->remove('billing_city_required');
+        $errors->remove('billing_state_required');
+        $errors->remove('billing_country_required');
+        $errors->remove('billing_phone_required');
+        $errors->remove('billing_email_required');
+        $errors->remove('billing_postcode_required');
+
+        // 某些版本 WC 的通用地址报错
+        $errors->remove('address_fields_validation');
+    }
+}
+
+/**
+ * 确保详细地址这个字段本身不为空（这是我们唯一的底线）
+ */
+add_action('woocommerce_checkout_process', 'hlt_ensure_at_least_address_exists');
+function hlt_ensure_at_least_address_exists()
+{
+    if (empty($_POST['billing_address_1'])) {
+        wc_add_notice('请填写详细收货地址', 'error');
+    }
+}
+
+/**
+ * 针对“请提供一个地址才能继续”报错的专项拦截
+ */
+add_filter('woocommerce_add_error', 'hlt_remove_specific_address_error');
+function hlt_remove_specific_address_error($error)
+{
+    if (strpos($error, '请提供一个地址才能继续') !== false) {
+        return false; // 直接不显示这个错误
+    }
+    return $error;
+}
+
+/**
+ * 强制告诉 WooCommerce 地址已经完整了
+ */
+add_filter('woocommerce_checkout_posted_data', 'hlt_fix_posted_state_data');
+function hlt_fix_posted_state_data($data)
+{
+    // 确保 state 不带 CN 前缀，某些插件会误加前缀导致验证失败
+    $data['billing_state'] = str_replace('CN', '', $data['billing_state']);
+    return $data;
+}
+
+/**
+ * 订单提交成功后，强制清空购物车
+ */
+add_action('woocommerce_checkout_order_processed', 'hlt_force_empty_cart_after_checkout', 10, 1);
+function hlt_force_empty_cart_after_checkout($order_id)
+{
+    if (WC()->cart) {
+        WC()->cart->empty_cart();
+    }
 }
