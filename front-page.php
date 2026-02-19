@@ -8,31 +8,26 @@ get_header();
   <section class="category-grid-section">
     <div class="category-grid-container">
       <?php
-      // 1. 获取所有产品分类
       $terms = get_terms([
         'taxonomy' => 'product_cat',
-        'hide_empty' => false, // 隐藏没有商品的分类，如果你想显示空分类请改为 false
+        'hide_empty' => false,
       ]);
 
       if (!empty($terms) && !is_wp_error($terms)):
         foreach ($terms as $term):
-          // 排除默认的“未分类”
-          if ($term->slug === 'uncategorized')
-            continue;
+          if ($term->slug === 'uncategorized') continue;
 
-          // 2. 获取分类配置的缩略图 ID
           $thumbnail_id = get_term_meta($term->term_id, 'thumbnail_id', true);
-          // 3. 获取图片 URL（优先使用分类图，没有则用占位图）
-          $term_img_url = $thumbnail_id ? wp_get_attachment_image_url($thumbnail_id, 'medium') : wc_placeholder_img_src();
+          $term_img_url = $thumbnail_id ? wp_get_attachment_image_url($thumbnail_id, 'large') : wc_placeholder_img_src();
           ?>
 
           <div class="category-grid-item">
             <a href="<?php echo esc_url(get_term_link($term)); ?>">
               <div class="category-img-box">
                 <img src="<?php echo esc_url($term_img_url); ?>" alt="<?php echo esc_attr($term->name); ?>">
-              </div>
-              <div class="category-name-label">
-                <?php echo esc_html($term->name); ?>
+                <div class="category-overlay">
+                    <span class="category-name-inner"><?php echo esc_html($term->name); ?></span>
+                </div>
               </div>
             </a>
           </div>
@@ -46,95 +41,78 @@ get_header();
 </main>
 
 <?php
-// 公共底部导航
 get_template_part('template-parts/bottom-nav');
 get_footer();
 ?>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const options = {
-      root: null,
-      rootMargin: '0px 0px -10% 0px',
-      threshold: 0
-    };
-
-    const dividerObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-active');
-        } else {
-          entry.target.classList.remove('is-active');
-        }
-      });
-    }, options);
-
-    document.querySelectorAll('.category-divider').forEach(el => {
-      dividerObserver.observe(el);
-    });
-  });
-</script>
-
 <style>
-  /* 容器基础设置 */
+  /* 全局背景设为纯净白，或者极浅灰 */
   .page-container {
-    background-color: #fff;
+    background-color: #ffffff;
     min-height: 100vh;
+    padding-top: 10px; /* 给顶部留一点点呼吸感 */
   }
 
   .category-grid-section {
-    padding: 15px 12px;
-    margin-bottom: 80px;
-    /* 避开底部导航栏高度 */
+    padding: 12px;
   }
 
-
-
-  /* 核心：两列网格布局 */
   .category-grid-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    /* 强制分成两列 */
-    gap: 15px;
-    /* 图片之间的间距 */
+    gap: 12px;
   }
 
-  /* 单个分类卡片 */
-  .category-grid-item a {
-    text-decoration: none;
-    display: block;
-  }
+  .category-grid-item a { text-decoration: none; }
 
+  /* 图片容器 */
   .category-img-box {
+    position: relative;
     width: 100%;
     aspect-ratio: 1 / 1;
-    /* 强制图片容器为正方形 */
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    background-color: #f5f5f5;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    background-color: #f1f5f9;
   }
 
   .category-img-box img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* 保证图片铺满不拉伸 */
     display: block;
-    transition: transform 0.3s ease;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* 分类名称文字 */
-  .category-name-label {
-    margin-top: 10px;
-    font-size: 13px;
-    color: #444;
+  /* 遮罩层：浅灰色微透明，让文字更容易阅读 */
+  .category-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* background: rgba(0, 0, 0, 0.15); 使用极淡的黑色遮罩，能更好地衬托白色文字 */
+    background: rgba(72, 72, 72, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* 文字样式：完全透明背景，大字体 */
+  .category-name-inner {
+    color: #ffffff; /*既然遮罩变深了一点，用白色文字会非常有高级感 */
+    /* 如果你要保持黑色文字，请确保遮罩是浅色的 */
+    /* color: #000000; */
+    font-size: 32px; /* 加大字体 */
+    font-weight: 900; /* 特粗体 */
     text-align: center;
-    font-weight: 500;
+    padding: 0 10px;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2); /* 给文字加一点点阴影，防止被背景吃掉 */
+    background: transparent; /* 盒子完全透明 */
   }
 
-  /* 点击反馈效果 */
+  /* 交互效果 */
   .category-grid-item:active .category-img-box img {
-    transform: scale(0.95);
+    transform: scale(1.08);
   }
 </style>

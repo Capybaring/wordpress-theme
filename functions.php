@@ -226,3 +226,103 @@ function ajax_remove_cart_item()
     }
     wp_die();
 }
+
+add_action('template_redirect', 'myshop_restrict_access');
+
+function myshop_restrict_access()
+{
+    // 如果用户未登录，且当前访问的不是登录页面
+    if (!is_user_logged_in() && !is_page('login')) {
+        // 这里的 'login' 是你稍后创建的登录页面的别名 (slug)
+        wp_redirect(site_url('/login/'));
+        exit;
+    }
+}
+
+// 登录失败时跳转回自定义登录页并带上错误参数
+add_action('wp_login_failed', 'custom_login_failed');
+function custom_login_failed()
+{
+    $referrer = $_SERVER['HTTP_REFERER'];
+    if (!empty($referrer) && !strstr($referrer, 'wp-login') && !strstr($referrer, 'wp-admin')) {
+        // 如果是从我们的自定义 login 页面提交的，则跳回该页面
+        wp_redirect(site_url('/login/?login=failed'));
+        exit;
+    }
+}
+
+// 开启 PHP Session 支持
+add_action('init', 'register_my_session');
+function register_my_session()
+{
+    if (!session_id()) {
+        session_start();
+    }
+}
+
+function check_nav_activation()
+{
+    // 1. 如果是登录页面，强制关闭导航标识
+    if ($GLOBALS['pagenow'] === 'page-login.php') {
+        $_SESSION['hlt_nav_activated'] = false;
+        return;
+    }
+    // 判断是否在：WooCommerce产品归档页、产品分类页、或者产品标签页
+    if (is_post_type_archive('product') || is_product_category() || is_product_tag()) {
+        $_SESSION['hlt_nav_activated'] = true;
+        if (is_product_category()) {
+            $queried_object = get_queried_object();
+            $_SESSION['last_category_url'] = get_term_link($queried_object);
+        }
+    }
+}// 当进入分类页或产品归档页时，标记“导航已激活”
+add_action('template_redirect', 'check_nav_activation');
+
+
+add_action('wp_ajax_hlt_live_search', 'hlt_live_search_callback');
+add_action('wp_ajax_nopriv_hlt_live_search', 'hlt_live_search_callback');
+
+function hlt_live_search_callback()
+{
+    $keyword = isset($_POST['keyword']) ? sanitize_text_field($_POST['keyword']) : '';
+    // 接收解码后的中文 Slug
+    $product_cat = isset($_POST['product_cat']) ? sanitize_text_field($_POST['product_cat']) : '';
+    $args = array(
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'posts_per_page' => 8,
+        's' => $keyword,
+    );
+
+    // 关键修正：只有在 product_cat 真的有值时才合并 tax_query
+    if (!empty($product_cat)) {
+        $args['tax_query'] = array(
+            array(
+                'taxonomy' => 'product_cat',
+                'field' => 'slug',
+                'terms' => $product_cat,
+                'operator' => 'IN', // 确保包含子分类
+            ),
+        );
+    }
+
+    $query = new WP_Query($args);
+    $results = array();
+
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+            $product = wc_get_product(get_the_ID());
+            $results[] = array(
+                'title' => get_the_title(),
+                'url' => get_the_permalink(),
+                'sku' => $product ? $product->get_sku() : ''
+            );
+        }
+        wp_reset_postdata();
+        wp_send_json_success($results);
+    } else {
+        wp_send_json_error('No products');
+    }
+    wp_die();
+}
