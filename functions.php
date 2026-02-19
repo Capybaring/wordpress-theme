@@ -565,3 +565,15 @@ function hlt_force_empty_cart_after_checkout($order_id)
         WC()->cart->empty_cart();
     }
 }
+
+/**
+ * 移除“您使用的是临时密码”提示
+ */
+add_filter( 'woocommerce_temporary_password_notice', '__return_false' );
+
+// 备选方案：如果上面的不生效，可以使用这个更底层的钩子
+add_action( 'init', function() {
+    if ( class_exists( 'WC_Shortcode_My_Account' ) ) {
+        remove_action( 'woocommerce_before_my_account', array( 'WC_Shortcode_My_Account', 'check_temp_password_notification' ), 10 );
+    }
+}, 20 );
