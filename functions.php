@@ -17,6 +17,13 @@ function myshop_enqueue_styles()
 add_action('wp_enqueue_scripts', 'myshop_enqueue_styles');
 
 add_filter('template_include', function ($template) {
+    // 逻辑：如果当前页面别名是 login
+    if (is_page('login')) {
+        $custom_login = get_template_directory() . '/page-login.php';
+        if (file_exists($custom_login)) {
+            return $custom_login;
+        }
+    }
     if (is_cart()) {
         $custom = get_template_directory() . '/woocommerce/cart.php';
         if (file_exists($custom))
@@ -253,7 +260,7 @@ function myshop_restrict_access()
     }
 
     // 4. 只有既没登录，又不在登录页的人，才会被踢回登录页
-    wp_safe_redirect(site_url('/login/'));
+    wp_safe_redirect(home_url('/login/'));
     exit;
 }
 
