@@ -237,12 +237,24 @@ add_action('template_redirect', 'myshop_restrict_access');
 
 function myshop_restrict_access()
 {
-    // 如果用户未登录，且当前访问的不是登录页面
-    if (!is_user_logged_in() && !is_page('login')) {
-        // 这里的 'login' 是你稍后创建的登录页面的别名 (slug)
-        wp_redirect(site_url('/login/'));
-        exit;
+    // 1. 如果已经登录，直接放行，不执行任何逻辑
+    if (is_user_logged_in()) {
+        return;
     }
+
+    // 2. 获取当前请求的真实路径
+    // 例如访问 site.com/login/，它可能是 "/login/"
+    $current_path = trim($_SERVER['REQUEST_URI'], '/');
+
+    // 3. 核心判断：如果路径中包含 "login"，说明这就是大门，绝对不能重定向！
+    // 这样写比 is_page('login') 稳固一万倍，因为它不依赖数据库查询
+    if (strpos($current_path, 'login') !== false) {
+        return;
+    }
+
+    // 4. 只有既没登录，又不在登录页的人，才会被踢回登录页
+    wp_safe_redirect(site_url('/login/'));
+    exit;
 }
 
 // 登录失败时跳转回自定义登录页并带上错误参数
@@ -569,11 +581,11 @@ function hlt_force_empty_cart_after_checkout($order_id)
 /**
  * 移除“您使用的是临时密码”提示
  */
-add_filter( 'woocommerce_temporary_password_notice', '__return_false' );
+add_filter('woocommerce_temporary_password_notice', '__return_false');
 
 // 备选方案：如果上面的不生效，可以使用这个更底层的钩子
-add_action( 'init', function() {
-    if ( class_exists( 'WC_Shortcode_My_Account' ) ) {
-        remove_action( 'woocommerce_before_my_account', array( 'WC_Shortcode_My_Account', 'check_temp_password_notification' ), 10 );
+add_action('init', function () {
+    if (class_exists('WC_Shortcode_My_Account')) {
+        remove_action('woocommerce_before_my_account', array('WC_Shortcode_My_Account', 'check_temp_password_notification'), 10);
     }
-}, 20 );
+}, 20);
